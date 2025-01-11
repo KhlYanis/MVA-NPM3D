@@ -138,11 +138,10 @@ if __name__ == '__main__':
     #
 
     # If statement to skip this part if wanted
-    if True:
-        np.random.seed(42)
+    if False:
 
         # Define the search parameters
-        num_queries = 5000
+        num_queries = 1000
         radius = 0.20
 
         # YOUR CODE
@@ -190,9 +189,9 @@ if __name__ == '__main__':
         
     if True :
         # Retrieve the optimal leaf number
-        optimal_leaf = 76
+        optimal_leaf = 51
         
-        r_values = np.arange(0.05, 1.0, 0.05)
+        r_values = np.arange(0.05, 0.5, 0.05)
 
         time_for_radius = []
         random_idx = np.random.choice(points.shape[0], size = 1000, replace = False)
@@ -200,8 +199,10 @@ if __name__ == '__main__':
         for radius in r_values :
             tree = KDTree(data = points, leaf_size = optimal_leaf)
             
+            queries = points[random_idx]
+            
             t0 = time.time()
-            tree.query_radius(points[random_idx], r = radius)
+            tree.query_radius(queries, r = radius)
             t1 = time.time()
 
             time_for_radius.append(t1-t0)
@@ -215,5 +216,5 @@ if __name__ == '__main__':
         plt.show()
 
         time_r_20 = time_for_radius[np.argwhere(r_values == 0.20)[0, 0]]
-        total_time_r_20 = (points.shape[0]/num_queries)*time_r_20
+        total_time_r_20 = (points.shape[0]/1000)*time_r_20
         print(f"Le temps pour r = 20 cm est de {total_time_r_20} secondes")
