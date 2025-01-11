@@ -49,8 +49,8 @@ def brute_force_spherical(queries, supports, radius):
     # queries est de taille [N, 3] où N correspond au nombre de queries
     # supports est de taille [M, 3] où M est le nombre de points dans le nuage de points
 
-    neighborhoods = [[point for point in points if np.linalg.norm(query - point) <= 0.2 ] for query in queries]
-
+    neighborhoods = None
+    
     return neighborhoods
 
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     #
 
     # Path of the file
-    file_path = '../data/indoor_scan.ply'
+    file_path = './data/indoor_scan.ply'
 
     # Load point cloud
     data = read_ply(file_path)
