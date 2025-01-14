@@ -86,7 +86,7 @@ if __name__ == '__main__':
     #
 
     # Path of the file
-    file_path = './TP1/data/indoor_scan.ply'
+    file_path = '../TP1/data/indoor_scan.ply'
 
     # Load point cloud
     data = read_ply(file_path)

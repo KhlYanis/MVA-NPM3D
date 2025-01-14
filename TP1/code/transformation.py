@@ -55,7 +55,7 @@ if __name__ == '__main__':
     #
 
     # Path of the file
-    file_path = './data/bunny.ply'
+    file_path = '../data/bunny.ply'
 
     # Load point cloud
     data = read_ply(file_path)
