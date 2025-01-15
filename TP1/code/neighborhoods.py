@@ -48,18 +48,25 @@ import matplotlib.pyplot as plt
 
 
 def brute_force_spherical(queries, supports, radius):
-    # queries est de taille [N, 3] où N correspond au nombre de queries
-    # supports est de taille [M, 3] où M est le nombre de points dans le nuage de points
 
-    neighborhoods = None
+    neighborhoods = []
+    for i in range(len(queries)):
+        query = queries[i]
+        distances = np.linalg.norm(supports - query, axis=1)
+        neighbors = np.where(distances <= radius)[0]
+        neighborhoods.append(neighbors.tolist())
 
     return neighborhoods
 
 
 def brute_force_KNN(queries, supports, k):
 
-    # YOUR CODE
-    neighborhoods = None
+    neighborhoods = []
+    for i in range(len(queries)):
+        query = queries[i]
+        distances = np.linalg.norm(supports - query, axis=1)
+        neighbors = np.argsort(distances)[:k]
+        neighborhoods.append(neighbors.tolist())
 
     return neighborhoods
 
