@@ -82,9 +82,6 @@ def best_rigid_transform(data, ref):
     R = (Vt.T).dot(U.T)
     # Calcul du vecteur de translation
     T = ref_barycenter - R.dot(data_barycenter)
-
-    print("Shape of R : ", R.shape)
-    print("shape of T : ", T.shape)
     
     return R, T
 
