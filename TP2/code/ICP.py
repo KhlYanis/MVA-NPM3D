@@ -64,6 +64,28 @@ def best_rigid_transform(data, ref):
     R = np.eye(data.shape[0])
     T = np.zeros((data.shape[0],1))
 
+    # Calcul des barycentres
+    data_barycenter = np.mean(data, axis = 1, keepdims = True)
+    ref_barycenter = np.mean(ref, axis = 1, keepdims = True)
+
+    # Centrage des nuages de points par rapport à leur barycentre
+    data_centered = data - data_barycenter
+    ref_centered = ref - ref_barycenter
+
+    # Calcul de la matrice de covariance
+    H = data_centered.dot(ref_centered.T)
+
+    # Calcul de la décomposition en valeurs singulières (SVD) de H
+    U, _, Vt = np.linalg.svd(H)
+
+    # Calcul de la matrice de rotation
+    R = (Vt.T).dot(U.T)
+    # Calcul du vecteur de translation
+    T = ref_barycenter - R.dot(data_barycenter)
+
+    print("Shape of R : ", R.shape)
+    print("shape of T : ", T.shape)
+    
     return R, T
 
 
@@ -120,8 +142,8 @@ if __name__ == '__main__':
     if True:
 
         # Cloud paths
-        bunny_o_path = '../data/bunny_original.ply'
-        bunny_r_path = '../data/bunny_returned.ply'
+        bunny_o_path = 'TP2/data/bunny_original.ply'
+        bunny_r_path = 'TP2/data/bunny_returned.ply'
 
 		# Load clouds
         bunny_o_ply = read_ply(bunny_o_path)
@@ -136,7 +158,7 @@ if __name__ == '__main__':
         bunny_r_opt = R.dot(bunny_r) + T
 
         # Save cloud
-        write_ply('../bunny_r_opt', [bunny_r_opt.T], ['x', 'y', 'z'])
+        write_ply('TP2/data/bunny_r_opt', [bunny_r_opt.T], ['x', 'y', 'z'])
 
         # Compute RMS
         distances2_before = np.sum(np.power(bunny_r - bunny_o, 2), axis=0)
