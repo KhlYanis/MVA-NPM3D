@@ -115,6 +115,30 @@ def icp_point_to_point(data, ref, max_iter, RMS_threshold):
 
     # YOUR CODE
 
+
+    kd_tree = KDTree(ref.T)
+    for i in range(max_iter):
+        _, neighbors = kd_tree.query(data_aligned.T, k=1)
+        neighbors = neighbors.squeeze()
+        R, T = best_rigid_transform(data_aligned, ref[:,neighbors])
+        data_aligned = R @ data_aligned + T
+        
+        if i == 0:
+            T_list.append(T)
+            R_list.append(R)
+        else:
+            T_list.append(R @ T_list[-1] + T)
+            R_list.append(R @ R_list[-1])
+
+        neighbors_list.append(neighbors)
+
+        
+        rms = np.sqrt(np.mean(np.sum((data_aligned - ref[:,neighbors].squeeze())**2, axis=0)))
+        RMS_list.append(rms)
+    
+        if rms < RMS_threshold:
+            break
+
     return data_aligned, R_list, T_list, neighbors_list, RMS_list
 
 
@@ -136,7 +160,7 @@ if __name__ == '__main__':
     #
 
     # If statement to skip this part if wanted
-    if True:
+    if False:
 
         # Cloud paths
         bunny_o_path = 'TP2/data/bunny_original.ply'
@@ -176,8 +200,8 @@ if __name__ == '__main__':
     if False:
 
         # Cloud paths
-        ref2D_path = '../data/ref2D.ply'
-        data2D_path = '../data/data2D.ply'
+        ref2D_path = 'TP2/data/ref2D.ply'
+        data2D_path = 'TP2/data/data2D.ply'
         
         # Load clouds
         ref2D_ply = read_ply(ref2D_path)
@@ -197,11 +221,11 @@ if __name__ == '__main__':
         
 
     # If statement to skip this part if wanted
-    if False:
+    if True:
 
         # Cloud paths
-        bunny_o_path = '../data/bunny_original.ply'
-        bunny_p_path = '../data/bunny_perturbed.ply'
+        bunny_o_path = 'TP2/data/bunny_original.ply'
+        bunny_p_path = 'TP2/data/bunny_perturbed.ply'
         
         # Load clouds
         bunny_o_ply = read_ply(bunny_o_path)
