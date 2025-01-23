@@ -87,10 +87,16 @@ def compute_local_PCA(query_points, cloud_points, radius = None, k = None):
 
 def compute_features(query_points, cloud_points, radius):
 
-    verticality = None
-    linearity = None
-    planarity = None
-    sphericity = None
+    # Compute the eigenvalues and eigenvects of each query point neighborhood
+    eigenvals, eigenvects = compute_local_PCA(query_points, cloud_points, radius)
+
+    n = eigenvects[:, :, 0]
+
+    # Compute the different quantities
+    verticality = 2*np.arcsin(np.abs(n[..., 2]) / np.pi)
+    linearity = 1 - (eigenvals[:, 1]/eigenvals[:, 0])
+    planarity = (eigenvals[:, 1] - eigenvals[:, 2]) / eigenvals[:, 0]
+    sphericity = eigenvals[:, 0] / eigenvals[:, 2]
 
     return verticality, linearity, planarity, sphericity
 
