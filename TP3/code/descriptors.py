@@ -65,8 +65,8 @@ def PCA(points):
 
 
 
-def compute_local_PCA(query_points, cloud_points, radius):
-
+def compute_local_PCA(query_points, cloud_points, radius = None, k = None):
+    assert (radius is not None) or (k is not None), "either radius or k has to be set to an integer value"
     # This function needs to compute PCA on the neighborhoods of all query_points in cloud_points
 
     all_eigenvalues = np.zeros((cloud.shape[0], 3))
@@ -75,12 +75,12 @@ def compute_local_PCA(query_points, cloud_points, radius):
     tree = KDTree(query_points) # Default value of leaf_size is 40
 
     for i, query_point in enumerate(query_points):
-        idx_neighbors = tree.query_radius(query_point.reshape(1, -1) , r = radius)[0]
-        if len(idx_neighbors) > 0:
-            all_eigenvalues[i], all_eigenvectors[i] = PCA(cloud_points[idx_neighbors])
+        if k is None : 
+            idx_neighbors = tree.query_radius(query_point.reshape(1, -1) , r = radius)[0]
         else : 
-            all_eigenvalues[i] = np.array([0, 0, 0])
-            all_eigenvectors[i] = np.eye(3)
+            idx_neighbors = tree.query(query_point.reshape(-1, 1), k)
+
+        all_eigenvalues[i], all_eigenvectors[i] = PCA(cloud_points[idx_neighbors])
 
     return all_eigenvalues, all_eigenvectors
 
