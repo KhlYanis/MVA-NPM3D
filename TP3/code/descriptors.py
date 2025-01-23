@@ -51,8 +51,15 @@ import time
 
 def PCA(points):
 
-    eigenvalues = None
-    eigenvectors = None
+    # Compute the barycenter, then the centered points
+    barycenter = np.mean(points, axis = 0)
+    centered_points = points - barycenter
+
+    # Compute the covariance matrix 
+    cov_matrix = (1/points.shape[0]) * np.dot(centered_points.T, centered_points)
+
+    # Compute the eigenvalues/eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
 
     return eigenvalues, eigenvectors
 
@@ -64,6 +71,16 @@ def compute_local_PCA(query_points, cloud_points, radius):
 
     all_eigenvalues = np.zeros((cloud.shape[0], 3))
     all_eigenvectors = np.zeros((cloud.shape[0], 3, 3))
+
+    tree = KDTree(query_points) # Default value of leaf_size is 40
+
+    for i, query_point in enumerate(query_points):
+        idx_neighbors = tree.query_radius(query_point.reshape(1, -1) , r = radius)[0]
+        if len(idx_neighbors) > 0:
+            all_eigenvalues[i], all_eigenvectors[i] = PCA(cloud_points[idx_neighbors])
+        else : 
+            all_eigenvalues[i] = np.array([0, 0, 0])
+            all_eigenvectors[i] = np.eye(3)
 
     return all_eigenvalues, all_eigenvectors
 
@@ -94,7 +111,7 @@ if __name__ == '__main__':
     if True:
 
         # Load cloud as a [N x 3] matrix
-        cloud_path = '../data/Lille_street_small.ply'
+        cloud_path = 'TP3\data\Lille_street_small.ply'
         cloud_ply = read_ply(cloud_path)
         cloud = np.vstack((cloud_ply['x'], cloud_ply['y'], cloud_ply['z'])).T
 
@@ -114,10 +131,10 @@ if __name__ == '__main__':
 		
     # Normal computation
     # ******************
-    if False:
+    if True:
 
         # Load cloud as a [N x 3] matrix
-        cloud_path = '../data/Lille_street_small.ply'
+        cloud_path = 'TP3/data/Lille_street_small.ply'
         cloud_ply = read_ply(cloud_path)
         cloud = np.vstack((cloud_ply['x'], cloud_ply['y'], cloud_ply['z'])).T
 
@@ -126,5 +143,5 @@ if __name__ == '__main__':
         normals = all_eigenvectors[:, :, 0]
 
         # Save cloud with normals
-        write_ply('../Lille_street_small_normals.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
+        write_ply('TP3/Lille_street_small_normals.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
 		
