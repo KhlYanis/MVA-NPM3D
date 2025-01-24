@@ -137,6 +137,7 @@ if __name__ == '__main__':
 		
     # Normal computation
     # ******************
+    # with radius=0.5
     if True:
 
         # Load cloud as a [N x 3] matrix
@@ -144,10 +145,25 @@ if __name__ == '__main__':
         cloud_ply = read_ply(cloud_path)
         cloud = np.vstack((cloud_ply['x'], cloud_ply['y'], cloud_ply['z'])).T
 
-        # Compute PCA on the whole cloud
+        # Compute PCA on the whole cloud with k=30
+        all_eigenvalues, all_eigenvectors = compute_local_PCA(cloud, cloud, radius = 0.5)
+        normals = all_eigenvectors[:, :, 0]
+
+        # Save cloud with normals
+        write_ply('TP3/Lille_street_small_normals_radius.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
+		
+    # with k=30
+    if True:
+
+        # Load cloud as a [N x 3] matrix
+        cloud_path = 'TP3/data/Lille_street_small.ply'
+        cloud_ply = read_ply(cloud_path)
+        cloud = np.vstack((cloud_ply['x'], cloud_ply['y'], cloud_ply['z'])).T
+
+        # Compute PCA on the whole cloud with k=30
         all_eigenvalues, all_eigenvectors = compute_local_PCA(cloud, cloud, k = 30)
         normals = all_eigenvectors[:, :, 0]
 
         # Save cloud with normals
-        write_ply('TP3/Lille_street_small_normals.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
+        write_ply('TP3/Lille_street_small_normals_k30.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
 		
