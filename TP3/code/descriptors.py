@@ -91,12 +91,13 @@ def compute_features(query_points, cloud_points, radius):
     eigenvals, eigenvects = compute_local_PCA(query_points, cloud_points, radius)
 
     n = eigenvects[:, :, 0]
+    eps = 1e-8
 
     # Compute the different quantities
     verticality = 2*np.arcsin(np.abs(n[..., 2]) / np.pi)
-    linearity = 1 - (eigenvals[:, 1]/eigenvals[:, 0])
-    planarity = (eigenvals[:, 1] - eigenvals[:, 2]) / eigenvals[:, 0]
-    sphericity = eigenvals[:, 0] / eigenvals[:, 2]
+    linearity = 1 - (eigenvals[:, 1]/(eigenvals[:, 2] + eps))
+    planarity = (eigenvals[:, 1] - eigenvals[:, 0]) / (eigenvals[:, 2] + eps)
+    sphericity = eigenvals[:, 0] / (eigenvals[:, 2] + eps)
 
     return verticality, linearity, planarity, sphericity
 
@@ -137,8 +138,8 @@ if __name__ == '__main__':
 		
     # Normal computation
     # ******************
-    # with radius=0.5
-    if True:
+    # with radius = 0.5m
+    if False:
 
         # Load cloud as a [N x 3] matrix
         cloud_path = 'TP3/data/Lille_street_small.ply'
@@ -152,8 +153,8 @@ if __name__ == '__main__':
         # Save cloud with normals
         write_ply('TP3/Lille_street_small_normals_radius.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
 		
-    # with k=30
-    if True:
+    # with k = 30
+    if False:
 
         # Load cloud as a [N x 3] matrix
         cloud_path = 'TP3/data/Lille_street_small.ply'
@@ -167,3 +168,18 @@ if __name__ == '__main__':
         # Save cloud with normals
         write_ply('TP3/Lille_street_small_normals_k30.ply', (cloud, normals), ['x', 'y', 'z', 'nx', 'ny', 'nz'])
 		
+    ### Bonus section :
+    if True:
+
+        # Load cloud as a [N x 3] matrix
+        cloud_path = 'TP3/data/Lille_street_small.ply'
+        cloud_ply = read_ply(cloud_path)
+        cloud = np.vstack((cloud_ply['x'], cloud_ply['y'], cloud_ply['z'])).T
+
+        # Compute the features for a radius of 0.5m
+        verticality, linearity, planarity, sphericity = compute_features(cloud, cloud, radius = 0.5)
+
+        # Save cloud with scalars
+        write_ply('TP3/Lille_street_small_bonus.ply', (cloud, verticality, linearity, planarity, sphericity),
+                                                ['x', 'y', 'z', 'verticality', 'linearity', 'planarity', 'sphericity'])
+        
