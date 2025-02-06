@@ -30,14 +30,53 @@ import trimesh
 
 # Hoppe surface reconstruction
 def compute_hoppe(points,normals,scalar_field,grid_resolution,min_grid,size_voxel):
-    # YOUR CODE    
-    return
+    # YOUR CODE
+    x_x = np.linspace(min_grid['x'], min_grid['x'] + size_voxel*grid_resolution, grid_resolution)
+    x_y = np.linspace(min_grid['y'], min_grid['y'] + size_voxel*grid_resolution, grid_resolution)
+    x_z = np.linspace(min_grid['z'], min_grid['z'] + size_voxel*grid_resolution, grid_resolution)
+
+    kdt = KDTree(points, leaf_size=30, metric='euclidean')
+
+    for i in range(grid_resolution):
+        for j in range(grid_resolution):
+            for k in range(grid_resolution):
+                p = np.array([x_x[i], x_y[j], x_z[k]]) 
+
+                dist, ind = kdt.query(p.reshape(1, -1), k=1)
+                closest_point = points[ind.flatten()[0]]
+                normal = normals[ind.flatten()[0]]
+
+                vec_p = p - closest_point
+                scalar_field[i, j, k] = np.dot(vec_p, normal)
+    return scalar_field
     
 
 # IMLS surface reconstruction
 def compute_imls(points,normals,scalar_field,grid_resolution,min_grid,size_voxel,knn):
     # YOUR CODE
-    return
+    x_x = np.linspace(min_grid['x'], min_grid['x'] + size_voxel*grid_resolution, grid_resolution)
+    x_y = np.linspace(min_grid['y'], min_grid['y'] + size_voxel*grid_resolution, grid_resolution)
+    x_z = np.linspace(min_grid['z'], min_grid['z'] + size_voxel*grid_resolution, grid_resolution)
+
+    kdt = KDTree(points, leaf_size=30, metric='euclidean')
+
+    for i in range(grid_resolution):
+        for j in range(grid_resolution):
+            for k in range(grid_resolution):
+                p = np.array([x_x[i], x_y[j], x_z[k]])
+
+                dist, ind = kdt.query(p.reshape(1, -1), k=knn)
+                dist = dist.flatten()
+                ind = ind.flatten()
+
+                vec_p = points[ind] - p
+
+                w = np.exp(-dist**2 / 0.01)
+                w /= np.sum(w) 
+
+                scalar_field[i, j, k] = np.sum(w * np.einsum('ij,ij->i', vec_p, normals[ind]))
+
+    return scalar_field
 
 
 
@@ -46,7 +85,7 @@ if __name__ == '__main__':
     t0 = time.time()
     
     # Path of the file
-    file_path = '../data/bunny_normals.ply'
+    file_path = 'data/bunny_normals.ply'
 
     # Load point cloud
     data = read_ply(file_path)
@@ -81,7 +120,7 @@ if __name__ == '__main__':
 	
     # Export the mesh in ply using trimesh lib
     mesh = trimesh.Trimesh(vertices = verts, faces = faces)
-    mesh.export(file_obj='../bunny_mesh_hoppe_16.ply', file_type='ply')
+    mesh.export(file_obj='bunny_mesh_hoppe_16.ply', file_type='ply')
 	
     print("Total time for surface reconstruction : ", time.time()-t0)
 	
