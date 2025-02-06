@@ -31,9 +31,9 @@ import trimesh
 # Hoppe surface reconstruction
 def compute_hoppe(points,normals,scalar_field,grid_resolution,min_grid,size_voxel):
     # YOUR CODE
-    x_x = np.linspace(min_grid['x'], min_grid['x'] + size_voxel*grid_resolution, grid_resolution)
-    x_y = np.linspace(min_grid['y'], min_grid['y'] + size_voxel*grid_resolution, grid_resolution)
-    x_z = np.linspace(min_grid['z'], min_grid['z'] + size_voxel*grid_resolution, grid_resolution)
+    x_x = np.linspace(min_grid[0], min_grid[0] + size_voxel*grid_resolution, grid_resolution)
+    x_y = np.linspace(min_grid[1], min_grid[1] + size_voxel*grid_resolution, grid_resolution)
+    x_z = np.linspace(min_grid[2], min_grid[2] + size_voxel*grid_resolution, grid_resolution)
 
     kdt = KDTree(points, leaf_size=30, metric='euclidean')
 
@@ -54,9 +54,9 @@ def compute_hoppe(points,normals,scalar_field,grid_resolution,min_grid,size_voxe
 # IMLS surface reconstruction
 def compute_imls(points,normals,scalar_field,grid_resolution,min_grid,size_voxel,knn):
     # YOUR CODE
-    x_x = np.linspace(min_grid['x'], min_grid['x'] + size_voxel*grid_resolution, grid_resolution)
-    x_y = np.linspace(min_grid['y'], min_grid['y'] + size_voxel*grid_resolution, grid_resolution)
-    x_z = np.linspace(min_grid['z'], min_grid['z'] + size_voxel*grid_resolution, grid_resolution)
+    x_x = np.linspace(min_grid[0], min_grid[0] + size_voxel*grid_resolution, grid_resolution)
+    x_y = np.linspace(min_grid[1], min_grid[1] + size_voxel*grid_resolution, grid_resolution)
+    x_z = np.linspace(min_grid[2], min_grid[2] + size_voxel*grid_resolution, grid_resolution)
 
     kdt = KDTree(points, leaf_size=30, metric='euclidean')
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     t0 = time.time()
     
     # Path of the file
-    file_path = 'data/bunny_normals.ply'
+    file_path = 'TP4/data/bunny_normals.ply'
 
     # Load point cloud
     data = read_ply(file_path)
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     max_grid = max_grid + 0.10*(max_grid-min_grid)
 
 	# grid_resolution is the number of voxels in the grid in x, y, z axis
-    grid_resolution = 16 #128
+    grid_resolution = 128 #128
     size_voxel = max([(max_grid[0]-min_grid[0])/(grid_resolution-1),(max_grid[1]-min_grid[1])/(grid_resolution-1),(max_grid[2]-min_grid[2])/(grid_resolution-1)])
     print("size_voxel: ", size_voxel)
 	
@@ -120,7 +120,7 @@ if __name__ == '__main__':
 	
     # Export the mesh in ply using trimesh lib
     mesh = trimesh.Trimesh(vertices = verts, faces = faces)
-    mesh.export(file_obj='bunny_mesh_hoppe_16.ply', file_type='ply')
+    mesh.export(file_obj='bunny_mesh_hoppe_128.ply', file_type='ply')
 	
     print("Total time for surface reconstruction : ", time.time()-t0)
 	
