@@ -49,6 +49,13 @@ def compute_plane(points):
     normal_plane = np.zeros((3,1))
     
     # TODO:
+    v_1 = points[1, :] - points[0, :]
+    v_2 = points[2, :] - points[0, :]
+
+    normal_plane = np.cross(v_1, v_2)
+    normal_plane /= np.linalg.norm(normal_plane)
+
+    point_plane = points[0, :]
     
     return point_plane, normal_plane
 
@@ -59,7 +66,14 @@ def in_plane(points, pt_plane, normal_plane, threshold_in=0.1):
     indexes = np.zeros(len(points), dtype=bool)
     
     # TODO:
-        
+    
+    for id, point in enumerate(points):
+        distance = np.dot(point - pt_plane, normal_plane)/np.linalg.norm(normal_plane)
+        if distance < threshold_in:
+            indexes[id] = True
+        else : 
+            indexes[id] = False
+            
     return indexes
 
 
