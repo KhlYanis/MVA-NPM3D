@@ -49,13 +49,13 @@ def compute_plane(points):
     normal_plane = np.zeros((3,1))
     
     # TODO:
-    v_1 = points[1, :] - points[0, :]
-    v_2 = points[2, :] - points[0, :]
+    v_1 = points[1] - points[0]
+    v_2 = points[2] - points[0]
 
     normal_plane = np.cross(v_1, v_2)
     normal_plane /= np.linalg.norm(normal_plane)
 
-    point_plane = points[0, :]
+    point_plane = points[0]
     
     return point_plane, normal_plane
 
@@ -69,11 +69,11 @@ def in_plane(points, pt_plane, normal_plane, threshold_in=0.1):
     
     for id, point in enumerate(points):
         distance = np.dot(point - pt_plane, normal_plane)/np.linalg.norm(normal_plane)
-        if distance < threshold_in:
+        if abs(distance) < threshold_in:
             indexes[id] = True
         else : 
             indexes[id] = False
-            
+
     return indexes
 
 
@@ -85,7 +85,29 @@ def RANSAC(points, nb_draws=100, threshold_in=0.1):
     best_normal_plane = np.zeros((3,1))
     
     # TODO:
-                
+    nb_points = len(points)
+    
+    for _ in range(nb_draws):
+        # Draw randomly three points
+        draw = np.random.choice(nb_points, 3, replace = False)
+
+        drawn_points = points[draw]
+        point_plane, normal_plane = compute_plane(drawn_points)
+
+        # Retrieve the 
+        idx_in_plane = in_plane(points, 
+                                pt_plane = point_plane, 
+                                normal_plane = normal_plane,
+                                threshold_in = threshold_in)
+        
+        votes = np.sum(idx_in_plane)
+
+        # Change the the best plane fitting
+        if votes > best_vote :
+            best_pt_plane = point_plane
+            best_normal_plane = normal_plane
+            best_vote = votes
+   
     return best_pt_plane, best_normal_plane, best_vote
 
 
