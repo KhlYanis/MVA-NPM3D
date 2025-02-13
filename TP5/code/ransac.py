@@ -24,6 +24,7 @@
 
 # Import numpy package and name it "np"
 import numpy as np
+import numpy.ma as ma
 
 # Import functions to read and write ply files
 from ply import write_ply, read_ply
@@ -86,7 +87,7 @@ def RANSAC(points, nb_draws=100, threshold_in=0.1):
     
     # TODO:
     nb_points = len(points)
-    
+
     for _ in range(nb_draws):
         # Draw randomly three points
         draw = np.random.choice(nb_points, 3, replace = False)
@@ -119,7 +120,29 @@ def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2):
     remaining_inds = np.arange(0,nb_points)
 	
     # TODO:
-    
+    for id_plane in range(nb_planes):
+
+        if len(remaining_inds) < 3 :
+            break
+
+        # Run the RANSAC algorithm
+        best_pt_plane, best_normal_plane, _ = RANSAC(points[remaining_inds],
+                                                    nb_draws = nb_draws,
+                                                    threshold_in = threshold_in)
+        
+        # Retrieve the points in the plane
+        idx_in_plane = in_plane(points[remaining_inds], 
+                                pt_plane = best_pt_plane, 
+                                normal_plane = best_normal_plane,
+                                threshold_in = threshold_in)
+        
+        # Add the points in the current plane
+        plane_indices = np.append(plane_indices, remaining_inds[idx_in_plane])
+        plane_labels = np.append(plane_labels, np.repeat(id_plane, idx_in_plane.sum()))
+
+        # Update the remaining indices
+        remaining_inds  = remaining_inds[~idx_in_plane]
+        
     return plane_inds, remaining_inds, plane_labels
 
 
