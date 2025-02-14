@@ -67,13 +67,8 @@ def in_plane(points, pt_plane, normal_plane, threshold_in=0.1):
     indexes = np.zeros(len(points), dtype=bool)
     
     # TODO:
-    
-    for id, point in enumerate(points):
-        distance = np.dot(point - pt_plane, normal_plane)/np.linalg.norm(normal_plane)
-        if abs(distance) < threshold_in:
-            indexes[id] = True
-        else : 
-            indexes[id] = False
+    distances = np.dot(points - pt_plane, normal_plane)/np.linalg.norm(normal_plane)
+    indexes = np.abs(distances) < threshold_in
 
     return indexes
 
@@ -137,12 +132,12 @@ def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2):
                                 threshold_in = threshold_in)
         
         # Add the points in the current plane
-        plane_indices = np.append(plane_indices, remaining_inds[idx_in_plane])
+        plane_inds = np.append(plane_inds, remaining_inds[idx_in_plane])
         plane_labels = np.append(plane_labels, np.repeat(id_plane, idx_in_plane.sum()))
 
         # Update the remaining indices
         remaining_inds  = remaining_inds[~idx_in_plane]
-        
+
     return plane_inds, remaining_inds, plane_labels
 
 
@@ -167,7 +162,7 @@ if __name__ == '__main__':
     #
 
     # Path of the file
-    file_path = '../data/indoor_scan.ply'
+    file_path = 'TP5/data/indoor_scan.ply'
 
     # Load point cloud
     data = read_ply(file_path)
@@ -206,8 +201,8 @@ if __name__ == '__main__':
     remaining_inds = (1-points_in_plane).nonzero()[0]
     
     # Save extracted plane and remaining points
-    write_ply('../plane.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
-    write_ply('../remaining_points_plane.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+    write_ply('TP5/data/plane.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+    write_ply('TP5/data/remaining_points_plane.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
     
 
     # Computes the best plane fitting the point cloud
@@ -233,8 +228,8 @@ if __name__ == '__main__':
     remaining_inds = (1-points_in_plane).nonzero()[0]
     
     # Save the best extracted plane and remaining points
-    write_ply('../best_plane.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
-    write_ply('../remaining_points_best_plane.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+    write_ply('TP5/data/best_plane.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+    write_ply('TP5/data/remaining_points_best_plane.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
     
 
     # Find "all planes" in the cloud
@@ -254,12 +249,33 @@ if __name__ == '__main__':
     plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws, threshold_in, nb_planes)
     t1 = time.time()
     print('recursive RANSAC done in {:.3f} seconds'.format(t1 - t0))
-                
+
     # Save the best planes and remaining points
-    write_ply('../best_planes.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
-    write_ply('../remaining_points_best_planes.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+    write_ply('TP5/data/best_planes.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
+    write_ply('TP5/data/remaining_points_best_planes.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
     
-    
+
+    ## ----- QUESTION 3 ----- ##
+    print('\n--- 5) ---\n')
+
+    # Path of the file
+    file_path_aux = 'TP5/data/Lille_street_small.ply'
+
+    # Load point cloud
+    data_aux = read_ply(file_path_aux)
+
+    # Concatenate data
+    points = np.vstack((data_aux['x'], data_aux['y'], data_aux['z'])).T
+    nb_points = len(points)
+
+    t0 = time.time()
+    plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws, threshold_in, nb_planes)
+    t1 = time.time()
+    print('recursive RANSAC done in {:.3f} seconds'.format(t1 - t0))
+
+    # Save the best planes and remaining points
+    write_ply('TP5/data/best_planes_Lille.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
+    write_ply('TP5/data/remaining_points_best_planes_Lille.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
     
     print('Done')
     
