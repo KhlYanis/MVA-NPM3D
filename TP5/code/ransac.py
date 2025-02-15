@@ -169,7 +169,7 @@ def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2, normal
 
     if normals:
         # Compute the normals
-        _, all_eigenvectors = compute_local_PCA(points, points, k = 10)
+        _, all_eigenvectors = compute_local_PCA(points, points, k = 30)
         all_normals = all_eigenvectors[:, :, 0]
 
     for id_plane in range(nb_planes):
@@ -354,40 +354,42 @@ if __name__ == '__main__':
     
 
     ## ----- QUESTION 3 ----- ##
-    print('\n--- 5) ---\n')
+    if False :
+        print('\n--- 5) ---\n')
 
-    # Path of the file
-    file_path_aux = 'TP5/data/Lille_street_small.ply'
+        # Path of the file
+        file_path_aux = 'TP5/data/Lille_street_small.ply'
 
-    # Load point cloud
-    data_aux = read_ply(file_path_aux)
+        # Load point cloud
+        data_aux = read_ply(file_path_aux)
 
-    # Concatenate data
-    points_aux = np.vstack((data_aux['x'], data_aux['y'], data_aux['z'])).T
-    nb_points = len(points_aux)
+        # Concatenate data
+        points_aux = np.vstack((data_aux['x'], data_aux['y'], data_aux['z'])).T
+        nb_points = len(points_aux)
 
-    t0 = time.time()
-    plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points_aux, nb_draws= 300, threshold_in = 0.2, nb_planes = 3)
-    t1 = time.time()
-    print('recursive RANSAC done in {:.3f} seconds'.format(t1 - t0))
+        t0 = time.time()
+        plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points_aux, nb_draws= 300, threshold_in = 0.2, nb_planes = 3)
+        t1 = time.time()
+        print('recursive RANSAC done in {:.3f} seconds'.format(t1 - t0))
 
-    # Save the best planes and remaining points
-    write_ply('TP5/data/best_planes_Lille.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
-    write_ply('TP5/data/remaining_points_best_planes_Lille.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
-    
-    print('Done')
+        # Save the best planes and remaining points
+        write_ply('TP5/data/best_planes_Lille.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
+        write_ply('TP5/data/remaining_points_best_planes_Lille.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+        
+        print('Done')
 
 
     ## ----- QUESTION 4 ----- ##
-    print('\n--- 6) ---\n')
-    t0 = time.time()
-    plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws= 100, threshold_in = 0.1, nb_planes = 5, normals = True, threshold_angle = 15)
-    t1 = time.time()
-    print('recursive RANSAC with normals done in {:.3f} seconds'.format(t1 - t0))
+    if True :
+        print('\n--- 6) ---\n')
+        t0 = time.time()
+        plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws= 400, threshold_in = 0.1, nb_planes = 5, normals = True, threshold_angle = 15)
+        t1 = time.time()
+        print('recursive RANSAC with normals done in {:.3f} seconds'.format(t1 - t0))
 
-    # Save the best planes and remaining points
-    write_ply('TP5/data/best_planes_normals.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
-    write_ply('TP5/data/remaining_points_best_planes_normals.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
-    
-    print('Done')
-    
+        # Save the best planes and remaining points
+        write_ply('TP5/data/best_planes_normals.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
+        write_ply('TP5/data/remaining_points_best_planes_normals.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
+        
+        print('Done')
+        
