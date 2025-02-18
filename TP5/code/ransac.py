@@ -116,7 +116,6 @@ def aligned_normals(points, normals, normal_plane, threshold_angle):
     dot_products = np.clip(np.dot(normals, normal_plane), -1., 1.)
 
     angles = np.arccos(np.abs(dot_products)) # In radians
-    # Convert to degrees 
     angles = np.rad2deg(angles)
 
     # Check if the angle is below the threshold
@@ -156,10 +155,57 @@ def RANSAC_with_normals(points, normals, nb_draws = 200, threshold_angle = 15):
 
     return best_pt_plane, best_normal_plane, best_vote
 
+### -------------- BONUS ---------------- ###
+def improved_RANSAC(points, nb_draws, k, threshold_in):
+
+    best_vote = 3
+    best_pt_plane = np.zeros((3, 1))
+    best_normal_plane = np.zeros((3,1))
+    
+    # Initialize a KDTree for the neighborhood research
+    tree = KDTree(points)
+
+    for _ in range(nb_draws):
+        # Randomly draw the first point/normal
+        first_draw = np.random.choice(len(points), 1, replace = False)
+        point_1 = points[first_draw]
+
+        # Retrieve the indexes of the k-nearest neighbors
+        idx_neighbors = tree.query(point_1.reshape(1, -1), k, return_distance = False)[0]
+        neighbors = points[idx_neighbors]
+        # Draw two random points in the neighborhood
+        second_draw = np.random.choice(k, 2, replace = False)
+        point_2_3 = neighbors[second_draw]
+
+        # Concatenate the 3 drawn points
+        drawn_points = np.concatenate((point_1, point_2_3), axis = 0)
+
+        # Compute the plane's normal
+        point_plane, normal_plane = compute_plane(drawn_points)
+
+        # Retrieve the indexes of the points in the plane
+        idx_in_plane = in_plane(points, 
+                                pt_plane = point_plane, 
+                                normal_plane = normal_plane,
+                                threshold_in = threshold_in)
+        
+        votes = np.sum(idx_in_plane)
+
+        # Change the the best plane fitting
+        if votes > best_vote :
+            best_pt_plane = point_plane
+            best_normal_plane = normal_plane
+            best_vote = votes
+
+    return best_pt_plane, best_normal_plane, best_vote
+
+
+
+
 ### ------------------------------------- ###
 
 
-def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2, normals = False, threshold_angle = 15):
+def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2, normals = False, threshold_angle = 15, improved = False):
     
     nb_points = len(points)
     plane_inds = np.arange(0,0)
@@ -182,6 +228,11 @@ def recursive_RANSAC(points, nb_draws=100, threshold_in=0.1, nb_planes=2, normal
                                                     all_normals[remaining_inds],
                                                     nb_draws = nb_draws,
                                                     threshold_angle = threshold_angle)
+        elif improved :
+            best_pt_plane, best_normal_plane, _ = improved_RANSAC(points[remaining_inds],
+                                                                  nb_draws = nb_draws, 
+                                                                  k = 2000,
+                                                                  threshold_in = threshold_in)
         else:
             best_pt_plane, best_normal_plane, _ = RANSAC(points[remaining_inds],
                                                     nb_draws = nb_draws,
@@ -380,7 +431,7 @@ if __name__ == '__main__':
 
 
     ## ----- QUESTION 4 ----- ##
-    if True :
+    if False :
         print('\n--- 6) ---\n')
         t0 = time.time()
         plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws= 400, threshold_in = 0.1, nb_planes = 5, normals = True, threshold_angle = 15)
@@ -392,4 +443,29 @@ if __name__ == '__main__':
         write_ply('TP5/data/remaining_points_best_planes_normals.ply', [points[remaining_inds], colors[remaining_inds], labels[remaining_inds]], ['x', 'y', 'z', 'red', 'green', 'blue', 'label'])
         
         print('Done')
+
+        
+    ## ------ BONUS ------- ##
+    if True :
+        print('\n--- BONUS ---\n')
+
+        # Setup the parameters
+        nb_draws = 100
+        threshold_in = 0.1
+        nb_planes = 5
+
+        # RANSAC
+        t0 = time.time()
+        plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws, threshold_in, nb_planes)
+        t1 = time.time()
+        print('recursive RANSAC done in {:.3f} seconds'.format(t1 - t0))
+        write_ply('TP5/data/best_planes_BONUS.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
+        
+        # Improved RANSAC
+        t0 = time.time()
+        plane_inds, remaining_inds, plane_labels = recursive_RANSAC(points, nb_draws//4, threshold_in, nb_planes, improved = True)
+        t1 = time.time()
+        print('improved RANSAC done in {:.3f} seconds'.format(t1 - t0))
+
+        write_ply('TP5/data/best_planes_improved_BONUS.ply', [points[plane_inds], colors[plane_inds], labels[plane_inds], plane_labels.astype(np.int32)], ['x', 'y', 'z', 'red', 'green', 'blue', 'label', 'plane_label'])
         
