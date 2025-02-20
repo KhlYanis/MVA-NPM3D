@@ -130,20 +130,96 @@ class PointNetBasic(nn.Module):
         super().__init__()
         # YOUR CODE
 
+        self.classes = classes
+
+        ## BLOCK 1 :
+        self.block1 = nn.Sequential(
+            nn.Conv1d(in_channels = 3, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 64, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU()
+        )
+
+        ## BLOCK 2 :
+        self.block2 = nn.Sequential(
+            nn.Conv1d(in_channels = 64, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 64, out_channels = 128, kernel_size = 1),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 128, out_channels = 1024, kernel_size = 1),
+            nn.BatchNorm1d(1024),
+            nn.ReLU()
+        )
+
+        # Max Pooling layer
+        self.pooling = nn.MaxPool1d(kernel_size= 1024)
+
+        ## BLOCK 3 :
+        self.block3 = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.Dropout(p = 0.3),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Linear(256, self.classes)
+        )
+    
     def forward(self, input):
         # YOUR CODE
-        return
+
+        x = self.block1(input)
+        x = self.block2(x)
+        x = self.pooling(x)
+        x = self.block3(torch.squeeze(x))
+
+        return x
         
         
         
-#class Tnet(nn.Module):
-#    def __init__(self, k=3):
-#        super().__init__()
+class Tnet(nn.Module):
+    def __init__(self, k=3):
+        super().__init__()
         # YOUR CODE
 
-#    def forward(self, input):
-#        # YOUR CODE
-        
+        ## BLOCK 1 :
+        self.block1 = nn.Sequential(
+            nn.Conv1d(in_channels = 3, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 64, out_channels = 128, kernel_size = 1),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 128, out_channels = 1028, kernel_size = 1),
+            nn.BatchNorm1d(1024),
+            nn.ReLU()
+        )
+
+        # Pooling Layer
+        self.pooling = nn.MaxPool1d(1024)
+
+        ## BLOCK 2 : 
+        self.block2 = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Linear(256, k*k)
+        )
+
+    def forward(self, input):
+        # YOUR CODE
+        x = self.block1(input)
+        x = self.pooling(x)
+        x = self.block2(torch.squeeze(x))
+        return x
 
 #class PointNetFull(nn.Module):
 #    def __init__(self, classes = 10):
@@ -225,8 +301,8 @@ if __name__ == '__main__':
     train_loader = DataLoader(dataset=train_ds, batch_size=32, shuffle=True)
     test_loader = DataLoader(dataset=test_ds, batch_size=32)
 
-    model = MLP()
-    #model = PointNetBasic()
+    #model = MLP()
+    model = PointNetBasic()
     #model = PointNetFull()
     
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
