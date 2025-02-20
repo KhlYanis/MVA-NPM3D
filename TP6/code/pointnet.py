@@ -88,10 +88,40 @@ class PointCloudData_RAM(Dataset):
 
 class MLP(nn.Module):
     def __init__(self, classes = 10):
+        super().__init__()
         # YOUR CODE
+        self.classes = classes
+
+        # Initialize the layers
+        ## LAYER 1
+        self.layer1 = nn.Sequential(
+            nn.Linear(3072, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU()
+        )
+
+        ## LAYER 2
+        self.layer2 = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.Dropout1d(p = 0.3),
+            nn.BatchNorm1d(256),
+            nn.ReLU()
+        )
+
+        ## Classification layer
+        self.final_layer = nn.Linear(256, self.classes)
 
     def forward(self, input):
         # YOUR CODE
+        x = input.flatten(1)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.final_layer(x)
+
+        return x
+
+
 
 
 
@@ -102,26 +132,26 @@ class PointNetBasic(nn.Module):
 
     def forward(self, input):
         # YOUR CODE
+        return
         
         
         
-class Tnet(nn.Module):
-    def __init__(self, k=3):
-        super().__init__()
+#class Tnet(nn.Module):
+#    def __init__(self, k=3):
+#        super().__init__()
         # YOUR CODE
 
-    def forward(self, input):
+#    def forward(self, input):
+#        # YOUR CODE
+        
+
+#class PointNetFull(nn.Module):
+#    def __init__(self, classes = 10):
+#        super().__init__()
         # YOUR CODE
 
-
-class PointNetFull(nn.Module):
-    def __init__(self, classes = 10):
-        super().__init__()
+#    def forward(self, input):
         # YOUR CODE
-
-    def forward(self, input):
-        # YOUR CODE
-
 
 
 def basic_loss(outputs, labels):
@@ -177,7 +207,7 @@ if __name__ == '__main__':
     
     t0 = time.time()
     
-    ROOT_DIR = "../data/ModelNet10_PLY"
+    ROOT_DIR = "TP6/data/ModelNet10_PLY/ModelNet10_PLY/"
     
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
     print("Device: ", device)
