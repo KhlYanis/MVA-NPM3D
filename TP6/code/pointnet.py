@@ -44,7 +44,11 @@ class RandomNoise(object):
         noisy_pointcloud = pointcloud + noise
         return noisy_pointcloud
         
-
+class RandomResize(object):
+    def __call__(self, pointcloud):
+        size_factor = random.random()*1.5 + 0.5   # factor between 1/2 and 2
+        resized_pointcloud = pointcloud * size_factor
+        return resized_pointcloud
         
 class ToTensor(object):
     def __call__(self, pointcloud):
@@ -52,7 +56,8 @@ class ToTensor(object):
 
 
 def default_transforms():
-    return transforms.Compose([RandomRotation_z(),RandomNoise(),ToTensor()])
+    #return transforms.Compose([RandomRotation_z(),RandomNoise(),ToTensor()])
+    return transforms.Compose([RandomRotation_z(),RandomNoise(),RandomResize(),ToTensor()])
 
 def test_transforms():
     return transforms.Compose([ToTensor()])
@@ -195,7 +200,7 @@ class Tnet(nn.Module):
             nn.Conv1d(in_channels = 64, out_channels = 128, kernel_size = 1),
             nn.BatchNorm1d(128),
             nn.ReLU(),
-            nn.Conv1d(in_channels = 128, out_channels = 1028, kernel_size = 1),
+            nn.Conv1d(in_channels = 128, out_channels = 1024, kernel_size = 1),
             nn.BatchNorm1d(1024),
             nn.ReLU()
         )
@@ -219,15 +224,65 @@ class Tnet(nn.Module):
         x = self.block1(input)
         x = self.pooling(x)
         x = self.block2(torch.squeeze(x))
+        x = x.view(-1, self.k, self.k)
         return x
 
-#class PointNetFull(nn.Module):
-#    def __init__(self, classes = 10):
-#        super().__init__()
+class PointNetFull(nn.Module):
+    def __init__(self, classes = 10):
+        super().__init__()
         # YOUR CODE
+        self.classes = classes
 
-#    def forward(self, input):
+        self.tnet1 = Tnet(k=3)
+
+        self.block1 = nn.Sequential(
+            nn.Conv1d(in_channels = 3, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 64, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU()
+        )
+
+        ## BLOCK 2 :
+        self.block2 = nn.Sequential(
+            nn.Conv1d(in_channels = 64, out_channels = 64, kernel_size = 1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 64, out_channels = 128, kernel_size = 1),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Conv1d(in_channels = 128, out_channels = 1024, kernel_size = 1),
+            nn.BatchNorm1d(1024),
+            nn.ReLU()
+        )
+
+        # Max Pooling layer
+        self.pooling = nn.MaxPool1d(kernel_size= 1024)
+
+        ## BLOCK 3 :
+        self.block3 = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.Dropout(p = 0.3),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Linear(256, self.classes)
+        )
+
+
+    def forward(self, input):
         # YOUR CODE
+        m3x3 = self.tnet1(input)
+        x = torch.bmm(torch.transpose(input,1,2), m3x3).transpose(1,2)
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.pooling(x)
+        x = self.block3(torch.squeeze(x))
+
+        return x, m3x3
 
 
 def basic_loss(outputs, labels):
@@ -245,8 +300,8 @@ def pointnet_full_loss(outputs, labels, m3x3, alpha = 0.001):
 
 
 
-def train(model, device, train_loader, test_loader=None, epochs=250):
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+def train(model, device, train_loader, test_loader=None, epochs=250, lr=0.001):
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
     loss=0
     for epoch in range(epochs): 
@@ -254,10 +309,10 @@ def train(model, device, train_loader, test_loader=None, epochs=250):
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data['pointcloud'].to(device).float(), data['category'].to(device)
             optimizer.zero_grad()
-            outputs = model(inputs.transpose(1,2))
-            #outputs, m3x3 = model(inputs.transpose(1,2))
-            loss = basic_loss(outputs, labels)
-            #loss = pointnet_full_loss(outputs, labels, m3x3)
+            #outputs = model(inputs.transpose(1,2))
+            outputs, m3x3 = model(inputs.transpose(1,2))
+            #loss = basic_loss(outputs, labels)
+            loss = pointnet_full_loss(outputs, labels, m3x3)
             loss.backward()
             optimizer.step()
         scheduler.step()
@@ -269,8 +324,8 @@ def train(model, device, train_loader, test_loader=None, epochs=250):
             with torch.no_grad():
                 for data in test_loader:
                     inputs, labels = data['pointcloud'].to(device).float(), data['category'].to(device)
-                    outputs = model(inputs.transpose(1,2))
-                    #outputs, __ = model(inputs.transpose(1,2))
+                    #outputs = model(inputs.transpose(1,2))
+                    outputs, __ = model(inputs.transpose(1,2))
                     _, predicted = torch.max(outputs.data, 1)
                     total += labels.size(0)
                     correct += (predicted == labels).sum().item()
@@ -302,8 +357,8 @@ if __name__ == '__main__':
     test_loader = DataLoader(dataset=test_ds, batch_size=32)
 
     #model = MLP()
-    model = PointNetBasic()
-    #model = PointNetFull()
+    #model = PointNetBasic()
+    model = PointNetFull()
     
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     print("Number of parameters in the Neural Networks: ", sum([np.prod(p.size()) for p in model_parameters]))
